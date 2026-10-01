@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AutoPass app icon: two rows of three code dots over a key, all the same height and spaced evenly. The key is one shape. The mark is drawn in a 264 x 264 box (see Sources/AutoPass/Views/AppMark.swift). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8FB8EA"/>
+      <stop offset="1" stop-color="#4C78C2"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.22"/>
+      <stop offset="0.5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#sheen)"/>
+  <g transform="translate(287.6 287.6) scale(1.7)"><g fill="#fff"><circle cx="32" cy="32" r="32"/><circle cx="132" cy="32" r="32"/><circle cx="232" cy="32" r="32"/><circle cx="32" cy="132" r="32"/><circle cx="132" cy="132" r="32"/><circle cx="232" cy="132" r="32"/><path d="M0 232A32 32 0 1 1 64 232A32 32 0 1 1 0 232ZM66 212H250A14 14 0 0 1 264 226V226A14 14 0 0 1 250 240H66A14 14 0 0 1 52 226V226A14 14 0 0 1 66 212ZM50 212H90V240H50ZM194 226H200A12 12 0 0 1 212 238V252A12 12 0 0 1 200 264H194A12 12 0 0 1 182 252V238A12 12 0 0 1 194 226ZM246 212H252A12 12 0 0 1 264 224V252A12 12 0 0 1 252 264H246A12 12 0 0 1 234 252V224A12 12 0 0 1 246 212ZM22 232A10 10 0 1 0 42 232A10 10 0 1 0 22 232Z"/></g></g>
+</svg>
