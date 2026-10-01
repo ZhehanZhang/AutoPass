@@ -30,7 +30,7 @@ enum Approval {
             return .unavailable(error?.localizedDescription ?? "authentication is not available")
         }
         do {
-            return try await context.evaluatePolicy(policy, localizedReason: reason) ? .approved : .failed("not approved")
+            return try await context.evaluatePolicy(policy, localizedReason: L10n.message(reason)) ? .approved : .failed("not approved")
         } catch let e as LAError where [.userCancel, .appCancel, .systemCancel].contains(e.code) {
             return .cancelled
         } catch {

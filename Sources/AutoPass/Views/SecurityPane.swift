@@ -6,47 +6,47 @@ struct SecurityPane: View {
 
     var body: some View {
         PaneScroll(pane: .security, showsLock: true) {
-            Card(title: "Authentication", footer: authenticationFooter) {
-                SettingRow(title: "Before typing") {
-                    AuthenticationPicker(title: "Before typing", selection: $model.policy.approval)
+            Card(title: tr("Authentication"), footer: authenticationFooter) {
+                SettingRow(title: tr("Before typing")) {
+                    AuthenticationPicker(title: tr("Before typing"), selection: $model.policy.approval)
                 }
                 if model.policy.approval != .none {
                     CardDivider()
-                    SettingRow(title: "Remember for", subtitle: "How long one approval lasts") {
+                    SettingRow(title: tr("Remember for"), subtitle: tr("How long one approval lasts")) {
                         HStack(spacing: 8) {
                             Text(graceText).monospacedDigit().foregroundStyle(.secondary)
-                            Stepper("Remember for", value: $model.policy.approvalGraceSeconds, in: 0...900, step: 30).labelsHidden()
+                            Stepper(tr("Remember for"), value: $model.policy.approvalGraceSeconds, in: 0...900, step: 30).labelsHidden()
                         }
                     }
                 }
                 CardDivider()
-                SettingRow(title: "Edit browsers and security settings") {
-                    AuthenticationPicker(title: "Edit browsers and security settings", selection: $model.policy.settingsAuth)
+                SettingRow(title: tr("Edit browsers and security settings")) {
+                    AuthenticationPicker(title: tr("Edit browsers and security settings"), selection: $model.policy.settingsAuth)
                 }
             }
             .lockGated()
 
-            Card(title: "Pairing", footer: "AutoPass always fills in the code when Apple's window appears. This also lets it open iCloud Passwords for you once a browser is ready and you've paused.") {
-                ToggleRow(title: "Start when I start browsing",
+            Card(title: tr("Pairing"), footer: tr("AutoPass always fills in the code when Apple's window appears. This also lets it open iCloud Passwords for you once a browser is ready and you've paused.")) {
+                ToggleRow(title: tr("Start when I start browsing"),
                           isOn: Binding(get: { model.policy.autoPair == .whenBrowsing },
                                         set: { model.policy.autoPair = $0 ? .whenBrowsing : .off }))
             }
             .lockGated()
 
-            Card(title: "Safeguards", footer: "AutoPass always checks for Apple's signed helper, Apple's popup with six empty boxes, and a trusted browser that's in front.") {
-                ToggleRow(title: "Block debugging flags", subtitle: "Skip browsers started with automation or remote debugging", isOn: $model.policy.refuseDebugFlags)
+            Card(title: tr("Safeguards"), footer: tr("AutoPass always checks for Apple's signed helper, Apple's popup with six empty boxes, and a trusted browser that's in front.")) {
+                ToggleRow(title: tr("Block debugging flags"), subtitle: tr("Skip browsers started with automation or remote debugging"), isOn: $model.policy.refuseDebugFlags)
                 CardDivider()
-                SettingRow(title: "Typing pause", subtitle: "Wait this long after your last keystroke") {
+                SettingRow(title: tr("Typing pause"), subtitle: tr("Wait this long after your last keystroke")) {
                     HStack(spacing: 8) {
-                        Text(String(format: "%.2g s", model.policy.minimumIdleSeconds)).monospacedDigit().foregroundStyle(.secondary)
-                        Stepper("Typing pause", value: $model.policy.minimumIdleSeconds, in: 0.25...10, step: 0.25).labelsHidden()
+                        Text(tr("%@ s", String(format: "%.2g", model.policy.minimumIdleSeconds))).monospacedDigit().foregroundStyle(.secondary)
+                        Stepper(tr("Typing pause"), value: $model.policy.minimumIdleSeconds, in: 0.25...10, step: 0.25).labelsHidden()
                     }
                 }
                 CardDivider()
-                SettingRow(title: "Attempt limit", subtitle: "Stops retries from locking out Apple's helper") {
+                SettingRow(title: tr("Attempt limit"), subtitle: tr("Stops retries from locking out Apple's helper")) {
                     HStack(spacing: 8) {
-                        Text("\(model.policy.maxAttempts) per \(model.policy.attemptWindowMinutes) min").monospacedDigit().foregroundStyle(.secondary)
-                        Stepper("Attempt limit", value: $model.policy.maxAttempts, in: 1...10).labelsHidden()
+                        Text(tr("%@ per %@ min", "\(model.policy.maxAttempts)", "\(model.policy.attemptWindowMinutes)")).monospacedDigit().foregroundStyle(.secondary)
+                        Stepper(tr("Attempt limit"), value: $model.policy.maxAttempts, in: 1...10).labelsHidden()
                     }
                 }
             }
@@ -60,13 +60,13 @@ struct SecurityPane: View {
     }
 
     private var authenticationFooter: String {
-        let base = "Before typing asks before AutoPass fills in a code, and one approval covers a short while. Edit browsers and security settings asks before this window lets you change them. Touch ID uses your fingerprint only. Password asks for your account password and also accepts Touch ID."
-        return model.permissions.auth.touchID ? base : base + " Touch ID isn't available on this Mac, so AutoPass asks for your password instead."
+        let base = tr("Before typing asks before AutoPass fills in a code, and one approval covers a short while. Edit browsers and security settings asks before this window lets you change them. Touch ID uses your fingerprint only. Password asks for your account password and also accepts Touch ID.")
+        return model.permissions.auth.touchID ? base : base + " " + tr("Touch ID isn't available on this Mac, so AutoPass asks for your password instead.")
     }
 
     private var graceText: String {
         let s = model.policy.approvalGraceSeconds
-        return s == 0 ? "Every time" : s % 60 == 0 ? "\(s / 60) min" : "\(s) s"
+        return s == 0 ? tr("Every time") : s % 60 == 0 ? tr("%@ min", "\(s / 60)") : tr("%@ s", "\(s)")
     }
 }
 
@@ -78,9 +78,9 @@ private struct AuthenticationPicker: View {
 
     var body: some View {
         Picker(title, selection: $selection) {
-            Text("Off").tag(ApprovalMode.none)
-            Text("Touch ID").tag(ApprovalMode.biometricsOnly)
-            Text("Password").tag(ApprovalMode.deviceOwner)
+            Text(tr("Off")).tag(ApprovalMode.none)
+            Text(tr("Touch ID")).tag(ApprovalMode.biometricsOnly)
+            Text(tr("Password")).tag(ApprovalMode.deviceOwner)
         }
         .labelsHidden()
         .frame(width: 140)

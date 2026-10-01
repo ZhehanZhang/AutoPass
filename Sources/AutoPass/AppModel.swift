@@ -14,12 +14,14 @@ final class AppModel: ObservableObject {
     @Published private(set) var policyStoreError: String?
 
     // Preferences (UserDefaults).
+    /// `system` or a language code from `L10n.languages`. Applies straight away.
+    @Published var language: String { didSet { UserDefaults.standard.set(language, forKey: "language"); L10n.select(language) } }
     @Published var showMenuBarIcon: Bool { didSet { UserDefaults.standard.set(showMenuBarIcon, forKey: "showMenuBarIcon") } }
     @Published var notificationsEnabled: Bool { didSet { UserDefaults.standard.set(notificationsEnabled, forKey: "notifications"); if notificationsEnabled { askForNotifications(openSettingsIfDenied: false) } } }
 
     // Live state from the engine.
     @Published private(set) var status: EngineStatus = .idle {
-        didSet { if status != oldValue { Self.logger.notice("status: \(self.status.summary, privacy: .public)") } }
+        didSet { if status != oldValue { Self.logger.notice("status: \(self.status.englishSummary, privacy: .public)") } }
     }
     @Published private(set) var log: [LogEntry] = []
     @Published private(set) var health = Health()
@@ -39,11 +41,15 @@ final class AppModel: ObservableObject {
     /// A Touch ID or password prompt is already up; more clicks on locked controls shouldn't stack another.
     private var isAuthenticating = false
     private var authCheckedAt = Date.distantPast
+    private var knownAuth = AuthAvailability(touchID: true, password: true)
     private var storeHealthy = true
     private var revertingPolicy = false
 
     init() {
         let defaults = UserDefaults.standard
+        let savedLanguage = defaults.string(forKey: "language") ?? L10n.system
+        language = savedLanguage
+        L10n.select(savedLanguage)
         showMenuBarIcon = defaults.object(forKey: "showMenuBarIcon") as? Bool ?? true
         notificationsEnabled = defaults.object(forKey: "notifications") as? Bool ?? true
 
@@ -58,7 +64,7 @@ final class AppModel: ObservableObject {
         case .failed:
             policy = SecurityPolicy()
             storeHealthy = false
-            policyStoreError = "AutoPass couldn't read your saved settings, so it's using safe defaults. Changes won't be saved until this is fixed."
+            policyStoreError = tr("AutoPass couldn't read your saved settings, so it's using safe defaults. Changes won't be saved until this is fixed.")
         }
 
         refreshLaunchAtLogin()
@@ -94,7 +100,7 @@ final class AppModel: ObservableObject {
         Task { await engine?.update(policy: clean) }
         guard storeHealthy else { return }
         do { try KeychainPolicyStore.save(clean); policyStoreError = nil }
-        catch { policyStoreError = "AutoPass couldn't save your settings. \(error.localizedDescription)" }
+        catch { policyStoreError = tr("AutoPass couldn't save your settings. %@", error.localizedDescription) }
     }
 
     func unlock() async {
@@ -215,12 +221,15 @@ final class AppModel: ObservableObject {
         next.accessibility = AX.isTrusted(prompt: false)
         next.loginItem = SMAppService.mainApp.status.loginItem
         // Asking the system what Touch ID can do is a blocking call and the answer rarely changes: check it off the main
-        // thread, and not more than every half minute.
+        // thread, and not more than every half minute. Until the first answer, assume it's fine rather than flash a warning.
         if Date().timeIntervalSince(authCheckedAt) > 30 {
             authCheckedAt = Date()
-            next.auth = await Task.detached { Approval.availability() }.value
-        } else {
-            next.auth = permissions.auth
+            Task { [weak self] in
+                let found = await Task.detached { Approval.availability() }.value
+                guard let self else { return }
+                self.knownAuth = found
+                if self.permissions.auth != found { self.permissions.auth = found }
+            }
         }
         if Bundle.main.bundleIdentifier != nil {
             switch await UNUserNotificationCenter.current().notificationSettings().authorizationStatus {
@@ -229,6 +238,7 @@ final class AppModel: ObservableObject {
             default: next.notifications = .allowed
             }
         }
+        next.auth = knownAuth                       // read last: the check above may have finished meanwhile
         if next != permissions { permissions = next }
         let enabled = next.loginItem == .on
         if enabled != launchAtLogin { launchAtLogin = enabled }
@@ -259,15 +269,15 @@ final class AppModel: ObservableObject {
     /// trying on its own, send a quiet notification instead of interrupting you.
     private func handle(_ prompt: ExtensionPrompt) {
         guard prompt.userInitiated else {
-            notify("iCloud Passwords isn't in \(prompt.browserName)", "Install it or turn it on to use AutoPass with it.")
+            notify(tr("iCloud Passwords isn't in %@", prompt.browserName), tr("Install it or turn it on to use AutoPass with it."))
             return
         }
         let alert = NSAlert()
-        alert.messageText = "iCloud Passwords isn't in \(prompt.browserName)"
-        alert.informativeText = "Install it or turn it on, then pair again."
-        alert.addButton(withTitle: "Install")
-        alert.addButton(withTitle: "Turn On")
-        alert.addButton(withTitle: "Cancel")
+        alert.messageText = tr("iCloud Passwords isn't in %@", prompt.browserName)
+        alert.informativeText = tr("Install it or turn it on, then pair again.")
+        alert.addButton(withTitle: tr("Install"))
+        alert.addButton(withTitle: tr("Turn On"))
+        alert.addButton(withTitle: tr("Cancel"))
         NSApp.activate(ignoringOtherApps: true)
         switch alert.runModal() {
         case .alertFirstButtonReturn: installExtension(bundleID: prompt.bundleID, signingID: prompt.signingID)

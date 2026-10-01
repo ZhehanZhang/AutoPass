@@ -17,6 +17,7 @@ struct SettingsView: View {
             }
         }
         .toolbar(removing: .sidebarToggle)
+        .id(model.language)                         // the language applies straight away: rebuild every string
         // The layout is designed for at least this size; below it the rows start to wrap badly.
         .frame(minWidth: 800, minHeight: 560)
         .onAppear { model.setHealthDemand(true) }
@@ -74,24 +75,24 @@ private struct QuickActions: View {
     var body: some View {
         HStack(spacing: 8) {
             Button { model.pairNow() } label: {
-                tile("Pair Now", symbol: "key.fill")
+                tile(tr("Pair Now"), symbol: "key.fill")
             }
             .buttonStyle(TileButtonStyle())
             .disabled(model.status == .needsAccessibility)
-            .help("Pair with your browsers now")
+            .help(tr("Pair with your browsers now"))
 
             Button { model.setPaused(!model.isPaused) } label: {
-                tile(model.isPaused ? "Resume" : "Pause", symbol: model.isPaused ? "play.fill" : "pause.fill")
+                tile(model.isPaused ? tr("Resume") : tr("Pause"), symbol: model.isPaused ? "play.fill" : "pause.fill")
             }
             .buttonStyle(TileButtonStyle())
-            .help(model.isPaused ? "Let AutoPass pair again" : "Stop AutoPass from touching your browsers until you resume")
+            .help(model.isPaused ? tr("Let AutoPass pair again") : tr("Stop AutoPass from touching your browsers until you resume"))
         }
     }
 
     private func tile(_ title: String, symbol: String) -> some View {
         VStack(spacing: 5) {
             Image(systemName: symbol).font(.system(size: 17, weight: .medium)).contentTransition(.symbolEffect(.replace))
-            Text(title).font(.caption)
+            Text(title).font(.caption).lineLimit(2).multilineTextAlignment(.center).minimumScaleFactor(0.8)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)

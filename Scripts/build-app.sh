@@ -28,6 +28,8 @@ SDK_VERSION="$(xcrun --show-sdk-version)"
 vtool -set-build-version macos 14.0 "$SDK_VERSION" -replace -output "$APP/Contents/MacOS/AutoPass" "$BIN"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+# One folder per language, each with its Localizable.strings.
+for lproj in Resources/*.lproj; do cp -R "$lproj" "$APP/Contents/Resources/"; done
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
 identity="${AUTOPASS_SIGN_IDENTITY:-}"

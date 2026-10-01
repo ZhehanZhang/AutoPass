@@ -19,11 +19,11 @@ struct LockIndicator: View {
     /// Protection is on and the settings are open for changes.
     private var unlocked: Bool { model.policy.isSettingsProtected && !model.isLocked }
     private var symbol: String { !model.policy.isSettingsProtected ? "lock.open" : model.isLocked ? "lock.fill" : "lock.open.fill" }
-    private var title: String { !model.policy.isSettingsProtected ? "Lock Settings" : model.isLocked ? "Locked" : "Unlocked" }
+    private var title: String { !model.policy.isSettingsProtected ? tr("Lock Settings") : model.isLocked ? tr("Locked") : tr("Unlocked") }
     private var help: String {
-        !model.policy.isSettingsProtected ? "Ask for Touch ID or your password before settings change"
-            : model.isLocked ? "Unlock with Touch ID or your password"
-            : "Lock now. Settings lock again after five minutes"
+        !model.policy.isSettingsProtected ? tr("Ask for Touch ID or your password before settings change")
+            : model.isLocked ? tr("Unlock with Touch ID or your password")
+            : tr("Lock now. Settings lock again after five minutes")
     }
 }
 

@@ -138,7 +138,7 @@ private struct LockGate: ViewModifier {
                     Color.clear
                         .contentShape(Rectangle())
                         .onTapGesture { Task { await model.unlock() } }
-                        .help("Unlock to change this")
+                        .help(tr("Unlock to change this"))
                 }
             }
     }
@@ -154,8 +154,8 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .browsers: "AutoPass"
-        case .security: "Security"
-        case .general: "General"
+        case .security: tr("Security")
+        case .general: tr("General")
         }
     }
 
@@ -198,16 +198,16 @@ extension EngineStatus {
     /// A word or two, for the menu bar menu and under the status icon.
     var short: String {
         switch self {
-        case .needsAccessibility: "Needs access"
-        case .paused: "Paused"
-        case .idle: "No browser"
-        case .watching: "Ready"
-        case .waiting: "Waiting"
-        case .awaitingApproval: "Approve…"
-        case .openingPopup: "Opening…"
-        case .typing: "Filling…"
-        case .paired: "Paired"
-        case .attention: "Needs attention"
+        case .needsAccessibility: tr("Needs access")
+        case .paused: tr("Paused")
+        case .idle: tr("No browser")
+        case .watching: tr("Ready")
+        case .waiting: tr("Waiting")
+        case .awaitingApproval: tr("Approve…")
+        case .openingPopup: tr("Opening…")
+        case .typing: tr("Filling…")
+        case .paired: tr("Paired")
+        case .attention: tr("Needs attention")
         }
     }
 }

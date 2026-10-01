@@ -22,7 +22,7 @@ struct Permissions: Equatable {
     var accessibility = false
     var notifications: Notifications = .unknown
     var loginItem: LoginItem = .off
-    var auth = AuthAvailability(touchID: false, password: true)
+    var auth = AuthAvailability(touchID: true, password: true)
 }
 
 extension SMAppService.Status {

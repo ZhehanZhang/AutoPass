@@ -12,6 +12,7 @@ struct AutoPassApp: App {
         MenuBarExtra(isInserted: Binding(get: { model.showMenuBarIcon }, set: { if model.showMenuBarIcon != $0 { model.showMenuBarIcon = $0 } })) {
             MenuContent(openSettings: { delegate.showSettings() })
                 .environmentObject(model)
+                .id(model.language)
         } label: {
             MenuLabel().environmentObject(model)
         }
@@ -26,7 +27,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // First run (or permission revoked): open the window so the setup checklist is the first thing seen.
-        if !AX.isTrusted(prompt: false) || CommandLine.arguments.contains("--settings") { showSettings() }
+        // `--pane=security` (or `general`, `autopass`) opens Settings on that pane.
+        if let pane = CommandLine.arguments.compactMap({ $0.hasPrefix("--pane=") ? String($0.dropFirst(7)) : nil }).first {
+            switch pane {
+            case "security": settings.nav.pane = .security
+            case "general": settings.nav.pane = .general
+            default: settings.nav.pane = .browsers
+            }
+        }
+        if !AX.isTrusted(prompt: false) || CommandLine.arguments.contains("--settings") || CommandLine.arguments.contains(where: { $0.hasPrefix("--pane=") }) { showSettings() }
         Task { await model.refreshPermissions() }
         // Coming back from System Settings: pick up whatever was just allowed.
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
@@ -58,24 +67,24 @@ private struct MenuContent: View {
     var body: some View {
         Text(model.status.short)
         Divider()
-        Button("Pair Now") { model.pairNow() }
+        Button(tr("Pair Now")) { model.pairNow() }
             .disabled(model.status == .needsAccessibility)
         if model.isPaused {
-            Button("Resume") { model.setPaused(false) }
+            Button(tr("Resume")) { model.setPaused(false) }
         } else {
-            Menu("Pause") {
-                Button("15 Minutes") { model.setPaused(true, minutes: 15) }
-                Button("1 Hour") { model.setPaused(true, minutes: 60) }
-                Button("Until I Resume") { model.setPaused(true) }
+            Menu(tr("Pause")) {
+                Button(tr("15 Minutes")) { model.setPaused(true, minutes: 15) }
+                Button(tr("1 Hour")) { model.setPaused(true, minutes: 60) }
+                Button(tr("Until I Resume")) { model.setPaused(true) }
             }
         }
         Divider()
         if model.status == .needsAccessibility {
-            Button("Grant Accessibility Access…") { model.requestAccessibility(); model.openAccessibilitySettings() }
+            Button(tr("Grant Accessibility Access…")) { model.requestAccessibility(); model.openAccessibilitySettings() }
         }
-        Button("Settings…") { openSettings() }.keyboardShortcut(",")
+        Button(tr("Settings…")) { openSettings() }.keyboardShortcut(",")
         Divider()
-        Button("Quit AutoPass") { NSApplication.shared.terminate(nil) }.keyboardShortcut("q")
+        Button(tr("Quit AutoPass")) { NSApplication.shared.terminate(nil) }.keyboardShortcut("q")
     }
 }
 

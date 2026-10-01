@@ -336,3 +336,111 @@ import Testing
         #expect(!nothing.usesFallback(for: .biometricsOnly))
     }
 }
+
+// MARK: Localization
+
+@Suite struct LocalizerTests {
+    private let french = Localizer(table: [
+        "Paired": "Associé",
+        "Paired with %@": "Associé à %@",
+        "The browser isn't in front.": "Le navigateur n'est pas au premier plan.",
+        "AutoPass didn't type the code. %@": "AutoPass n'a pas saisi le code. %@",
+        "AutoPass paused because %@. It will try again.": "AutoPass a fait une pause car %@. Il réessaiera.",
+        "AutoPass paused because you were busy in %@. It will try again.": "AutoPass a fait une pause car vous étiez occupé dans %@. Il réessaiera.",
+        "you switched away from the browser": "vous avez changé de fenêtre",
+        "%@ per %@ min": "%2$@ min : %1$@ max",
+    ])
+
+    @Test func englishIsLeftAlone() {
+        let english = Localizer(table: [:])
+        #expect(english.isEnglish)
+        #expect(english.translate("Paired with Google Chrome") == "Paired with Google Chrome")
+        #expect(english.string("Paired") == "Paired")
+        #expect(english.format("Paired with %@", ["Edge"]) == "Paired with %@".replacingOccurrences(of: "%@", with: "Edge"))
+    }
+
+    @Test func fixedStringsAndUnknownOnes() {
+        #expect(french.string("Paired") == "Associé")
+        #expect(french.string("Something new") == "Something new")      // a missing translation shows the English
+    }
+
+    @Test func formatFillsPlaceholdersAndAllowsReordering() {
+        #expect(french.format("Paired with %@", ["Chrome"]) == "Associé à Chrome")
+        #expect(french.format("%@ per %@ min", ["3", "10"]) == "10 min : 3 max")
+    }
+
+    @Test func composedSentencesAreMatchedAgainstTemplates() {
+        #expect(french.translate("Paired with Google Chrome") == "Associé à Google Chrome")
+        // The name can contain anything, including punctuation.
+        #expect(french.translate("Paired with Brave (Beta) 1.2") == "Associé à Brave (Beta) 1.2")
+    }
+
+    @Test func piecesAreTranslatedToo() {
+        #expect(french.translate("AutoPass didn't type the code. The browser isn't in front.")
+                == "AutoPass n'a pas saisi le code. Le navigateur n'est pas au premier plan.")
+        #expect(french.translate("AutoPass paused because you switched away from the browser. It will try again.")
+                == "AutoPass a fait une pause car vous avez changé de fenêtre. Il réessaiera.")
+    }
+
+    @Test func theMostSpecificTemplateWins() {
+        #expect(french.translate("AutoPass paused because you were busy in Vivaldi. It will try again.")
+                == "AutoPass a fait une pause car vous étiez occupé dans Vivaldi. Il réessaiera.")
+    }
+
+    @Test func unknownSentencesComeBackUnchanged() {
+        #expect(french.translate("Totally different sentence") == "Totally different sentence")
+    }
+}
+
+// MARK: Translation files
+
+/// The `Localizable.strings` files in Resources: one per language, keyed by the English text.
+@Suite struct TranslationFileTests {
+    private static let resources = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        .appendingPathComponent("Resources")
+
+    private static func table(_ code: String) throws -> [String: String] {
+        let url = resources.appendingPathComponent("\(code).lproj/Localizable.strings")
+        let strings = NSDictionary(contentsOf: url) as? [String: String]
+        return try #require(strings, "\(code) couldn't be read")
+    }
+
+    private static let codes = ["zh-Hans", "zh-Hant", "es", "fr", "de", "ja", "ko", "pt-BR", "ru", "it"]
+
+    private static func placeholders(_ s: String) -> Int {
+        (try? NSRegularExpression(pattern: "%(?:[0-9]+\\$)?@"))?.numberOfMatches(in: s, range: NSRange(s.startIndex..., in: s)) ?? 0
+    }
+
+    @Test func englishIsTheTemplate() throws {
+        let english = try Self.table("en")
+        #expect(english.count > 150)
+        for (key, value) in english { #expect(key == value, "en: \(key)") }
+    }
+
+    @Test func everyLanguageTranslatesEveryString() throws {
+        let english = try Self.table("en")
+        for code in Self.codes {
+            let table = try Self.table(code)
+            #expect(Set(table.keys) == Set(english.keys), "\(code) has different keys than English")
+            for (key, value) in table { #expect(!value.trimmingCharacters(in: .whitespaces).isEmpty, "\(code): empty for \(key)") }
+        }
+    }
+
+    @Test func translationsKeepTheirPlaceholders() throws {
+        let english = try Self.table("en")
+        for code in Self.codes {
+            let table = try Self.table(code)
+            for key in english.keys {
+                #expect(Self.placeholders(table[key] ?? "") == Self.placeholders(key), "\(code): placeholders differ in \(key)")
+            }
+        }
+    }
+
+    @Test func aTranslatedActivityMessageIsRecognised() throws {
+        let localizer = Localizer(table: try Self.table("de"))
+        #expect(localizer.translate("Paired with Google Chrome") == "Mit Google Chrome gekoppelt")
+        #expect(localizer.translate("AutoPass didn't type the code. The browser isn't in front.")
+                == "AutoPass hat den Code nicht eingetippt. Der Browser ist nicht im Vordergrund.")
+    }
+}

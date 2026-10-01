@@ -29,8 +29,8 @@ struct BrowsersPane: View {
         .onAppear { ui.suggestions = model.suggestedBrowsers() }
         .onChange(of: model.policy.trustedBrowsers) { _, _ in ui.suggestions = model.suggestedBrowsers() }
         .onChange(of: model.supportedBrowsers.count) { _, _ in ui.suggestions = model.suggestedBrowsers() }
-        .alert("Can't add this browser", isPresented: Binding(get: { ui.errorMessage != nil }, set: { if !$0 { ui.errorMessage = nil } })) {
-            Button("OK", role: .cancel) {}
+        .alert(tr("Can't add this browser"), isPresented: Binding(get: { ui.errorMessage != nil }, set: { if !$0 { ui.errorMessage = nil } })) {
+            Button(tr("OK"), role: .cancel) {}
         } message: { Text(ui.errorMessage ?? "") }
         .sheet(item: $ui.pending) { p in
             ConfirmBrowserSheet(pending: p) { model.add(p.identity); ui.pending = nil } cancel: { ui.pending = nil }
@@ -43,8 +43,8 @@ struct BrowsersPane: View {
         VStack(alignment: .leading, spacing: 10) {
             mainContent
             Note(model.permissions.accessibility || model.status != .needsAccessibility
-                 ? "Use the key to pair now. Pause stops AutoPass from touching that browser until you resume."
-                 : "AutoPass needs Accessibility access to read Apple's code window and type it for you. Click Allow, then turn on AutoPass in System Settings. It carries on by itself once that's done.")
+                 ? tr("Use the key to pair now. Pause stops AutoPass from touching that browser until you resume.")
+                 : tr("AutoPass needs Accessibility access to read Apple's code window and type it for you. Click Allow, then turn on AutoPass in System Settings. It carries on by itself once that's done."))
                 .padding(.horizontal, 8)
         }
     }
@@ -54,7 +54,7 @@ struct BrowsersPane: View {
             statusColumn
             VStack(spacing: 0) {
                 if model.policy.trustedBrowsers.isEmpty {
-                    Text("No browsers").foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 18)
+                    Text(tr("No browsers")).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 18)
                 }
                 ForEach($model.policy.trustedBrowsers) { $browser in
                     if browser.id != model.policy.trustedBrowsers.first?.id { CardDivider() }
@@ -76,7 +76,7 @@ struct BrowsersPane: View {
                 .frame(width: 104, height: 104)
             Text(model.status.short).font(.callout).foregroundStyle(.secondary)
             if model.status == .needsAccessibility {
-                Button("Allow") { model.requestAccessibility(); model.openAccessibilitySettings() }.glassButton(prominent: true)
+                Button(tr("Allow")) { model.requestAccessibility(); model.openAccessibilitySettings() }.glassButton(prominent: true)
             }
         }
         .frame(width: 112)
@@ -102,8 +102,8 @@ struct BrowsersPane: View {
             Spacer(minLength: 8)
             if missing {
                 Menu {
-                    Button("Install iCloud Passwords") { model.installExtension(bundleID: b.bundleID, signingID: b.signingID) }
-                    Button("Turn On iCloud Passwords") { model.turnOnExtension(bundleID: b.bundleID, signingID: b.signingID) }
+                    Button(tr("Install iCloud Passwords")) { model.installExtension(bundleID: b.bundleID, signingID: b.signingID) }
+                    Button(tr("Turn On iCloud Passwords")) { model.turnOnExtension(bundleID: b.bundleID, signingID: b.signingID) }
                 } label: {
                     Image(systemName: "arrow.down.circle").frame(width: 16, height: 16)
                 }
@@ -111,7 +111,8 @@ struct BrowsersPane: View {
                 .glassIconButton()
                 .menuIndicator(.hidden)
                 .fixedSize()
-                .help("Install or turn on iCloud Passwords")
+                .help(tr("Install or turn on iCloud Passwords"))
+                .accessibilityLabel(tr("Install or turn on iCloud Passwords"))
             } else {
                 Button { if let pid = health?.pid { model.pairNow(browserPID: pid) } } label: {
                     Image(systemName: "key.fill").frame(width: 16, height: 16)
@@ -119,7 +120,8 @@ struct BrowsersPane: View {
                 }
                 .glassIconButton()
                 .disabled(health == nil || !b.isEnabled)
-                .help("Pair now")
+                .help(tr("Pair now"))
+                .accessibilityLabel(tr("Pair now"))
             }
             Button { model.setBrowserPaused(b, !paused) } label: {
                 Image(systemName: paused ? "play.fill" : "pause.fill").frame(width: 16, height: 16)
@@ -127,10 +129,11 @@ struct BrowsersPane: View {
             }
             .glassIconButton()
             .disabled(!b.isEnabled)
-            .help(paused ? "Resume" : "Pause")
+            .help(paused ? tr("Resume") : tr("Pause"))
+            .accessibilityLabel(paused ? tr("Resume") : tr("Pause"))
             Menu {
-                Button(b.isEnabled ? "Turn Off" : "Turn On") { browser.wrappedValue.isEnabled.toggle() }
-                Button("Remove", role: .destructive) { model.remove(b) }
+                Button(b.isEnabled ? tr("Turn Off") : tr("Turn On")) { browser.wrappedValue.isEnabled.toggle() }
+                Button(tr("Remove"), role: .destructive) { model.remove(b) }
             } label: {
                 Image(systemName: "ellipsis").frame(width: 16, height: 16)
             }
@@ -138,7 +141,8 @@ struct BrowsersPane: View {
             .menuIndicator(.hidden)
             .fixedSize()
             .lockGated(dims: false)
-            .help("More")
+            .help(tr("More"))
+            .accessibilityLabel(tr("More"))
         }
         .padding(.vertical, 6)
     }
@@ -153,11 +157,11 @@ struct BrowsersPane: View {
     }
 
     private func state(_ b: TrustedBrowser, _ health: BrowserHealth?, _ paused: Bool) -> String {
-        if !b.isEnabled { return "Off" }
-        if paused { return "Paused" }
-        guard let health else { return "Not running" }
-        if health.extensionMissing { return "iCloud Passwords not found" }
-        return health.paired == true ? "Paired" : "Not paired"
+        if !b.isEnabled { return tr("Off") }
+        if paused { return tr("Paused") }
+        guard let health else { return tr("Not running") }
+        if health.extensionMissing { return tr("iCloud Passwords not found") }
+        return health.paired == true ? tr("Paired") : tr("Not paired")
     }
 
     private var addMenu: some View {
@@ -165,15 +169,15 @@ struct BrowsersPane: View {
             Menu {
                 ForEach(ui.suggestions, id: \.url) { s in Button(s.name) { inspect(s.url) } }
                 if !ui.suggestions.isEmpty { Divider() }
-                Button("Choose…") { choose() }
+                Button(tr("Choose…")) { choose() }
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "plus")
-                    Text("Add Browser")
+                    Text(tr("Add Browser"))
                     Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Add Browser")
+                .accessibilityLabel(tr("Add Browser"))
             }
             .menuStyle(.button)
             .menuIndicator(.hidden)
@@ -188,12 +192,12 @@ struct BrowsersPane: View {
 
     private var activity: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Activity").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary).padding(.horizontal, 8)
+            Text(tr("Activity")).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary).padding(.horizontal, 8)
 
             // A fixed height that shows the newest few entries, so the page never grows or scrolls.
             VStack(spacing: 0) {
                 if model.log.isEmpty {
-                    Text("No activity yet").foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
+                    Text(tr("No activity yet")).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
                 }
                 ForEach(Array(model.log.prefix(Self.activityRows).enumerated()), id: \.element.id) { index, entry in
                     if index > 0 { CardDivider() }
@@ -201,7 +205,7 @@ struct BrowsersPane: View {
                         Image(systemName: entry.level == .info ? "checkmark.circle" : "exclamationmark.triangle.fill")
                             .foregroundStyle(entry.level == .info ? Color.secondary : Palette.warn)
                             .frame(width: 18)
-                        Text(entry.message).font(.callout).lineLimit(1)
+                        Text(L10n.message(entry.message)).font(.callout).lineLimit(1)
                         Spacer(minLength: 8)
                         Text(entry.date, style: .time).font(.caption).foregroundStyle(.secondary)
                     }
@@ -226,7 +230,7 @@ struct BrowsersPane: View {
         panel.allowedContentTypes = [.application]
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         panel.allowsMultipleSelection = false
-        panel.prompt = "Choose"
+        panel.prompt = tr("Choose")
         if panel.runModal() == .OK, let url = panel.url { inspect(url) }
     }
 
@@ -238,12 +242,12 @@ struct BrowsersPane: View {
             switch result {
             case .success(let identity):
                 if model.policy.trustedBrowsers.contains(where: { $0.signingID == identity.signingID }) {
-                    ui.errorMessage = "\(identity.name) is already added."
+                    ui.errorMessage = tr("%@ is already added.", identity.name)
                 } else {
                     ui.pending = PendingBrowser(identity: identity, supported: model.isSupportedByHelper(identity))
                 }
             case .failure(let error):
-                ui.errorMessage = error.localizedDescription
+                ui.errorMessage = L10n.message(error.localizedDescription)
             }
         }
     }
@@ -258,27 +262,27 @@ private struct ConfirmBrowserSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 14) {
                 Image(nsImage: appIcon(forBundleID: pending.identity.bundleID)).resizable().frame(width: 48, height: 48)
-                Text("Trust \(pending.identity.name)?").font(.title3.weight(.semibold))
+                Text(tr("Trust %@?", pending.identity.name)).font(.title3.weight(.semibold))
             }
 
             VStack(spacing: 0) {
-                row("Identifier", pending.identity.signingID)
+                row(tr("Identifier"), pending.identity.signingID)
                 CardDivider()
-                row("Team", pending.identity.teamID)
+                row(tr("Team"), pending.identity.teamID)
             }
             .padding(.horizontal, 14)
             .cardSurface(cornerRadius: 16)
 
             switch pending.supported {
-            case true?: Label("Apple's helper supports this browser", systemImage: "checkmark.circle.fill").foregroundStyle(Palette.ok)
-            case false?: Label("Apple's helper doesn't list this browser", systemImage: "exclamationmark.triangle.fill").foregroundStyle(Palette.warn)
+            case true?: Label(tr("Apple's helper supports this browser"), systemImage: "checkmark.circle.fill").foregroundStyle(Palette.ok)
+            case false?: Label(tr("Apple's helper doesn't list this browser"), systemImage: "exclamationmark.triangle.fill").foregroundStyle(Palette.warn)
             case nil: EmptyView()
             }
 
             HStack {
                 Spacer()
-                Button("Cancel", role: .cancel, action: cancel).glassButton().keyboardShortcut(.cancelAction)
-                Button(pending.supported == false ? "Add Anyway" : "Trust", action: add).glassButton(prominent: true).keyboardShortcut(.defaultAction)
+                Button(tr("Cancel"), role: .cancel, action: cancel).glassButton().keyboardShortcut(.cancelAction)
+                Button(pending.supported == false ? tr("Add Anyway") : tr("Trust"), action: add).glassButton(prominent: true).keyboardShortcut(.defaultAction)
             }
             .controlSize(.large)
         }

@@ -22,19 +22,25 @@ enum EngineStatus: Equatable {
     case paired(String)
     case attention(String)
 
-    /// A full sentence for tooltips and the log.
-    var summary: String {
+    /// A full sentence for tooltips, in the language in use.
+    var summary: String { describe(localized: true) }
+
+    /// The same in English, for the system log.
+    var englishSummary: String { describe(localized: false) }
+
+    private func describe(localized: Bool) -> String {
+        func t(_ key: String, _ args: String...) -> String { localized ? L10n.format(key, args) : L10n.english(key, args) }
         switch self {
-        case .needsAccessibility: "AutoPass needs Accessibility access"
-        case .paused: "Paused"
-        case .idle: "No browser is open"
-        case .watching(let b): "Watching \(b)"
-        case .waiting(let b): "Waiting to pair with \(b)"
-        case .awaitingApproval: "Waiting for your approval"
-        case .openingPopup: "Opening iCloud Passwords"
-        case .typing: "Filling in the code"
-        case .paired(let b): "Paired with \(b)"
-        case .attention(let why): why
+        case .needsAccessibility: return t("AutoPass needs Accessibility access")
+        case .paused: return t("Paused")
+        case .idle: return t("No browser is open")
+        case .watching(let b): return t("Watching %@", b)
+        case .waiting(let b): return t("Waiting to pair with %@", b)
+        case .awaitingApproval: return t("Waiting for your approval")
+        case .openingPopup: return t("Opening iCloud Passwords")
+        case .typing: return t("Filling in the code")
+        case .paired(let b): return t("Paired with %@", b)
+        case .attention(let why): return localized ? L10n.message(why) : why
         }
     }
 
