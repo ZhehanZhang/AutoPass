@@ -6,7 +6,7 @@ struct SecurityPane: View {
 
     var body: some View {
         PaneScroll(pane: .security, showsLock: true) {
-            Card(title: "Authentication", footer: "Before typing asks before AutoPass fills in a code, and one approval covers a short while. Edit browsers and security settings asks before this window lets you change them. Touch ID uses your fingerprint only. Password asks for your account password and also accepts Touch ID.") {
+            Card(title: "Authentication", footer: authenticationFooter) {
                 SettingRow(title: "Before typing") {
                     AuthenticationPicker(title: "Before typing", selection: $model.policy.approval)
                 }
@@ -57,6 +57,11 @@ struct SecurityPane: View {
                     .padding(14).cardSurface(cornerRadius: 18)
             }
         }
+    }
+
+    private var authenticationFooter: String {
+        let base = "Before typing asks before AutoPass fills in a code, and one approval covers a short while. Edit browsers and security settings asks before this window lets you change them. Touch ID uses your fingerprint only. Password asks for your account password and also accepts Touch ID."
+        return model.permissions.auth.touchID ? base : base + " Touch ID isn't available on this Mac, so AutoPass asks for your password instead."
     }
 
     private var graceText: String {

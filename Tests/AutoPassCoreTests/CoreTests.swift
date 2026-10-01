@@ -306,3 +306,33 @@ import Testing
         for n in [14, 50, 10_000] { #expect(RetryBackoff.delay(afterInterruptions: n) == 20) }    // capped, never infinite
     }
 }
+
+// MARK: Authentication availability
+
+@Suite struct AuthAvailabilityTests {
+    private let both = AuthAvailability(touchID: true, password: true)
+    private let noTouchID = AuthAvailability(touchID: false, password: true)
+    private let nothing = AuthAvailability(touchID: false, password: false)
+
+    @Test func offStaysOffAndNeverNeedsAnything() {
+        for a in [both, noTouchID, nothing] { #expect(a.effective(.none) == ApprovalMode.none) }
+    }
+
+    @Test func whatYouChooseIsWhatYouGetWhenItCanBeShown() {
+        #expect(both.effective(.biometricsOnly) == .biometricsOnly)
+        #expect(both.effective(.deviceOwner) == .deviceOwner)
+        #expect(!both.usesFallback(for: .biometricsOnly) && !both.usesFallback(for: .deviceOwner))
+    }
+
+    @Test func touchIDFallsBackToThePasswordPromptOnAMacWithoutIt() {
+        #expect(noTouchID.effective(.biometricsOnly) == .deviceOwner)
+        #expect(noTouchID.usesFallback(for: .biometricsOnly))
+        #expect(noTouchID.effective(.deviceOwner) == .deviceOwner)
+    }
+
+    @Test func nothingAvailableMeansNoPromptAndNeverSkipsTheCheck() {
+        #expect(nothing.effective(.biometricsOnly) == nil)
+        #expect(nothing.effective(.deviceOwner) == nil)
+        #expect(!nothing.usesFallback(for: .biometricsOnly))
+    }
+}

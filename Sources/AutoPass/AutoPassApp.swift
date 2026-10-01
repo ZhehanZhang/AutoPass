@@ -27,6 +27,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // First run (or permission revoked): open the window so the setup checklist is the first thing seen.
         if !AX.isTrusted(prompt: false) || CommandLine.arguments.contains("--settings") { showSettings() }
+        Task { await model.refreshPermissions() }
+        // Coming back from System Settings: pick up whatever was just allowed.
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in await self?.model.refreshPermissions() }
+        }
     }
 
     func showSettings() { settings.show(model: model) }

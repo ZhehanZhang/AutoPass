@@ -42,7 +42,9 @@ struct BrowsersPane: View {
     private var mainCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             mainContent
-            Note("Use the key to pair now. Pause stops AutoPass from touching that browser until you resume.")
+            Note(model.permissions.accessibility || model.status != .needsAccessibility
+                 ? "Use the key to pair now. Pause stops AutoPass from touching that browser until you resume."
+                 : "AutoPass needs Accessibility access to read Apple's code window and type it for you. Click Allow, then turn on AutoPass in System Settings. It carries on by itself once that's done.")
                 .padding(.horizontal, 8)
         }
     }

@@ -6,7 +6,9 @@ import AutoPassCore
 /// is the creating app (by code signature), so another process reading or rewriting it triggers a
 /// system prompt instead of silently turning approval off or trusting a new browser.
 enum KeychainPolicyStore {
-    private static let service = "com.zhehanz.AutoPass.policy"
+    /// "com.zhehanz.AutoPass.policy" for the real app. It follows the bundle identifier, so a differently identified copy
+    /// (a test build) never reads or overwrites this app's policy.
+    private static let service = (Bundle.main.bundleIdentifier ?? "com.zhehanz.AutoPass") + ".policy"
     private static let account = "security-policy-v1"
 
     enum LoadResult {

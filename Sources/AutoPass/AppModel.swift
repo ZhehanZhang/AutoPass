@@ -15,7 +15,7 @@ final class AppModel: ObservableObject {
 
     // Preferences (UserDefaults).
     @Published var showMenuBarIcon: Bool { didSet { UserDefaults.standard.set(showMenuBarIcon, forKey: "showMenuBarIcon") } }
-    @Published var notificationsEnabled: Bool { didSet { UserDefaults.standard.set(notificationsEnabled, forKey: "notifications"); if notificationsEnabled { requestNotificationAuthorization() } } }
+    @Published var notificationsEnabled: Bool { didSet { UserDefaults.standard.set(notificationsEnabled, forKey: "notifications"); if notificationsEnabled { askForNotifications(openSettingsIfDenied: false) } } }
 
     // Live state from the engine.
     @Published private(set) var status: EngineStatus = .idle {
@@ -25,6 +25,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var health = Health()
     @Published private(set) var isPaused = false
     @Published private(set) var launchAtLogin = false
+    @Published private(set) var permissions = Permissions()
     @Published private(set) var launchAtLoginError: String?
 
     /// What Apple's helper on this Mac will accept as a parent (read from its code signature).
@@ -37,6 +38,7 @@ final class AppModel: ObservableObject {
     private var relockTask: Task<Void, Never>?
     /// A Touch ID or password prompt is already up; more clicks on locked controls shouldn't stack another.
     private var isAuthenticating = false
+    private var authCheckedAt = Date.distantPast
     private var storeHealthy = true
     private var revertingPolicy = false
 
@@ -75,7 +77,6 @@ final class AppModel: ObservableObject {
         let engine = PairingEngine(policy: policy, hideWindows: true, sink: sink)
         self.engine = engine
         Task { await engine.start() }
-        if notificationsEnabled { requestNotificationAuthorization() }
     }
 
     // MARK: Policy & lock
@@ -100,12 +101,7 @@ final class AppModel: ObservableObject {
         guard policy.isSettingsProtected, !isUnlocked, !isAuthenticating else { return }
         isAuthenticating = true
         defer { isAuthenticating = false }
-        let reason = "Change AutoPass security settings"
-        var outcome = await Approval.authenticate(mode: policy.settingsAuth, reason: reason)
-        // Touch ID only, on a Mac that can't offer it right now: the settings still have to be reachable.
-        if case .unavailable = outcome, policy.settingsAuth == .biometricsOnly {
-            outcome = await Approval.authenticate(mode: .deviceOwner, reason: reason)
-        }
+        let outcome = await Approval.authenticate(mode: policy.settingsAuth, reason: "Change AutoPass security settings")
         if case .approved = outcome {
             isUnlocked = true
             relockTask?.cancel()
@@ -208,11 +204,53 @@ final class AppModel: ObservableObject {
             launchAtLoginError = error.localizedDescription
         }
         refreshLaunchAtLogin()
+        Task { await refreshPermissions() }
     }
 
-    private func requestNotificationAuthorization() {
+    func openLoginItemsSettings() { SMAppService.openSystemSettingsLoginItems() }
+
+    /// Reads what the system currently allows. Cheap, and only publishes when something changed.
+    func refreshPermissions() async {
+        var next = Permissions()
+        next.accessibility = AX.isTrusted(prompt: false)
+        next.loginItem = SMAppService.mainApp.status.loginItem
+        // Asking the system what Touch ID can do is a blocking call and the answer rarely changes: check it off the main
+        // thread, and not more than every half minute.
+        if Date().timeIntervalSince(authCheckedAt) > 30 {
+            authCheckedAt = Date()
+            next.auth = await Task.detached { Approval.availability() }.value
+        } else {
+            next.auth = permissions.auth
+        }
+        if Bundle.main.bundleIdentifier != nil {
+            switch await UNUserNotificationCenter.current().notificationSettings().authorizationStatus {
+            case .notDetermined: next.notifications = .notAsked
+            case .denied: next.notifications = .denied
+            default: next.notifications = .allowed
+            }
+        }
+        if next != permissions { permissions = next }
+        let enabled = next.loginItem == .on
+        if enabled != launchAtLogin { launchAtLogin = enabled }
+    }
+
+    /// Notifications are asked for in context: when you turn them on, when you press Allow in Settings, or the first time
+    /// AutoPass has something to tell you. Not at launch, where it would pile onto the Accessibility prompt.
+    func askForNotifications(openSettingsIfDenied: Bool) {
         guard Bundle.main.bundleIdentifier != nil else { return }
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { _, _ in }
+        Task {
+            let center = UNUserNotificationCenter.current()
+            switch await center.notificationSettings().authorizationStatus {
+            case .notDetermined: _ = try? await center.requestAuthorization(options: [.alert])
+            case .denied: if openSettingsIfDenied { openNotificationSettings() }
+            default: break
+            }
+            await refreshPermissions()
+        }
+    }
+
+    func openNotificationSettings() {
+        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension")!)
     }
 
     // MARK: iCloud Passwords missing from a browser
@@ -257,7 +295,20 @@ final class AppModel: ObservableObject {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        let center = UNUserNotificationCenter.current()
+        Task {
+            switch await center.notificationSettings().authorizationStatus {
+            case .notDetermined:
+                // The first time there's something to say is the moment to ask.
+                if (try? await center.requestAuthorization(options: [.alert])) == true { try? await center.add(request) }
+            case .denied:
+                break
+            default:
+                try? await center.add(request)
+            }
+            await refreshPermissions()
+        }
     }
 
     private func append(_ level: LogLevel, _ message: String) {

@@ -20,6 +20,13 @@ struct SettingsView: View {
         // The layout is designed for at least this size; below it the rows start to wrap badly.
         .frame(minWidth: 800, minHeight: 560)
         .onAppear { model.setHealthDemand(true) }
+        // You're likely to be in System Settings granting something: reflect it as soon as it happens.
+        .task {
+            while !Task.isCancelled {
+                await model.refreshPermissions()
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
         .onDisappear { model.setHealthDemand(false); model.lock() }
     }
 

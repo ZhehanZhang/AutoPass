@@ -18,7 +18,7 @@ Apple's iCloud Passwords extension for Chrome (and Edge, Vivaldi, Brave, Arc, �
 
 1. **Download** the latest notarized `AutoPass-x.y.z.zip` from the [Releases](https://github.com/ZhehanZhang/AutoPass/releases) page, unzip it and move `AutoPass.app` to Applications. It runs on macOS 14 or later, on Apple silicon and Intel.
 2. **Install iCloud Passwords in your browser.** Pinning it to the toolbar is optional. If it's pinned, AutoPass presses its button. If it isn't, AutoPass opens the Extensions (puzzle piece) menu and picks it from the list. If it can't find the extension in either place, it offers to install it or turn it on.
-3. **Open AutoPass and grant Accessibility** (System Settings → Privacy & Security → Accessibility → AutoPass). The first-run window walks you through it.
+3. **Open AutoPass and allow Accessibility.** The window opens on its own the first time, with the status showing "Needs access" and a plain explanation. Click **Allow**, then turn on AutoPass in System Settings → Privacy & Security → Accessibility. AutoPass carries on by itself as soon as it's on, and *Pair Now* stays off until then. Nothing else is asked for up front: notifications are requested the first time AutoPass has something to tell you (or when you press Allow under General → Permissions).
 
 That's all. Start your browser, begin browsing, and about a second after you pause, AutoPass has opened iCloud Passwords, typed the code and closed the popup again.
 
@@ -42,9 +42,9 @@ A System Settings–style window in Liquid Glass (flat materials before macOS 26
 
 - **AutoPass** shows the status beside your browsers, each with buttons to pair now and pause. *Pair Now* and *Pause* in the sidebar act on every browser at once.
 - **Security** has **Authentication** (**Before typing** and **Edit browsers and security settings**, each Off, Touch ID or Password), whether pairing starts when you start browsing, and the safeguards below.
-- **General** has Open at login, the menu bar icon, notifications, and the version and license.
+- **General** has Open at login, the menu bar icon and notifications, a **Permissions** card that shows what macOS currently allows (Accessibility, Notifications and, when macOS needs your OK, Login Items) with a button to fix each one that isn't, and the version and license. It updates live while the window is open, so you see a change as soon as you make it in System Settings.
 
-A lock indicator in the top right corner of the AutoPass and Security panes shows whether browsers and security settings are locked. Clicking it, or any locked control, asks for Touch ID or your password. Touch ID is fingerprint only. Password is the system prompt, which also accepts Touch ID.
+A lock indicator in the top right corner of the AutoPass and Security panes shows whether browsers and security settings are locked. Clicking it, or any locked control, asks for Touch ID or your password. Touch ID is fingerprint only. Password is the system prompt, which also accepts Touch ID. On a Mac without Touch ID (or with no fingerprints enrolled), choosing Touch ID asks for your password instead, and the Security pane says so, so a setting never turns into "no check" or locks you out of your own settings.
 
 ## Safety model
 
